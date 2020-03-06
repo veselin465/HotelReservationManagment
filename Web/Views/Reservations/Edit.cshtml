@@ -1,0 +1,72 @@
+﻿@using Data.Enumeration
+@using Web.Models.Reservations
+@using Web.Models.Users
+@using Web.Models.Rooms
+@using Web.Models.Clients
+
+
+@model Web.Models.Reservations.ReservationsEditViewModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Change reservation</h1>
+
+<hr />
+
+@if (Model.Message != null)
+{
+
+    <h5 style="color:red;">Last action was not completed:</h5>
+    <h5 style="color:red;">@Model.Message</h5>
+    <hr />
+}
+
+<div class="row">
+
+    <div class="col-md-4">
+        <form asp-action="Edit" asp-controller="Reservations" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <br />
+            <div class="form-group">
+                <label asp-for="DateOfAccommodation" class="control-label">Date of Accommodation</label>
+                <input asp-for="DateOfAccommodation" class="form-control" type="date" />
+                <span asp-validation-for="DateOfAccommodation" class="text-danger"></span>
+            </div>
+            <br />
+            <div class="form-group">
+                <label asp-for="DateOfExemption" class="control-label">Date of Exemption </label>
+                <input asp-for="DateOfExemption" class="form-control" type="date" />
+                <span asp-validation-for="DateOfExemption" class="text-danger"></span>
+            </div>
+
+            <br />
+
+            <div class="form-group">
+                <label asp-for="IsBreakfastIncluded" class="control-label">Breakfast included</label>
+                <input asp-for="IsBreakfastIncluded" class="form-control" type="checkbox" />
+                <span asp-validation-for="IsBreakfastIncluded" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IsAllInclusive" class="control-label">All Inclusive</label>
+                <input asp-for="IsAllInclusive" class="form-control" type="checkbox" />
+                <span asp-validation-for="IsAllInclusive" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Change reservation" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

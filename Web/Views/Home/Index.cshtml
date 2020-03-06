@@ -1,0 +1,71 @@
+﻿
+@{
+    ViewData["Title"] = "HomePage";
+}
+
+
+<head>
+    <style>
+        td {
+            padding: 10px;
+            padding-right: 30px;
+        }
+    </style>
+</head>
+
+<h1 style="text-align:center">Welcome to <b>Hotel Reservation</b></h1>
+<table style="border:none;text-align:center;margin-left:auto;margin-right:auto;">
+    <tbody>
+        <tr class="p-3">
+            <td>
+                User
+            </td>
+            <td>
+                <a asp-controller="Users" asp-action="Index">View</a>
+            </td>
+            <td>
+                <a asp-controller="Users" asp-action="Create">Register</a>
+            </td>
+            <td>
+                <a asp-controller="Users" asp-action="LogIn">LogIn</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Client
+            </td>
+            <td>
+                <a asp-controller="Clients" asp-action="Index">View</a>
+            </td>
+            <td>
+                <a asp-controller="Clients" asp-action="Create">Register</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Room
+            </td>
+            <td>
+                <a asp-controller="Rooms" asp-action="Index">View</a>
+            </td>
+            <td>
+                <a asp-controller="Rooms" asp-action="Create">Create</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Reservation
+            </td>
+            <td>
+                <a asp-controller="Reservations" asp-action="Index">View</a>
+            </td>
+            <td>
+                <a asp-controller="Reservations" asp-action="Create">Reserve</a>
+            </td>
+        </tr>
+
+    </tbody>
+</table>

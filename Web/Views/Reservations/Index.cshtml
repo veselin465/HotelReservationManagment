@@ -1,0 +1,144 @@
+﻿@using Web.Models.Users
+@using Web.Models.Rooms
+@using Web.Models.Clients
+@using Web.Models.Reservations
+@model Web.Models.Reservations.ReservationsIndexViewModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<head>
+    <style>
+        table, th, td {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .change-page-display-amount {
+            background: #e8e8e8;
+            border: 2px solid #d8d8d8;
+            color: black;
+            font: bold;
+        }
+    </style>
+</head>
+
+<h1>Complete information about reservations</h1>
+<br />
+<br />
+
+<div style="float: right">
+    <ul class="pagination">
+
+        <li class="page-item" align="right">
+            <a asp-action="ChangePageSize" asp-route-id="10" class="page-link change-page-display-amount">10</a>
+        </li>
+        <li class="page-item" align="right">
+            <a asp-action="ChangePageSize" asp-route-id="25" class="page-link change-page-display-amount">25</a>
+        </li>
+        <li class="page-item" align="right">
+            <a asp-action="ChangePageSize" asp-route-id="50" class="page-link change-page-display-amount">50</a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <ul class="pagination">
+        @for (var i = 1; i <= Model.Pager.PagesCount; i++)
+        {
+            <li class="page-item @(i == Model.Pager.CurrentPage ? "active" : "")">
+                <a asp-route-Pager.CurrentPage="@i" class="page-link">@i</a>
+            </li>
+        }
+
+    </ul>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                F- and L- <br />
+                names
+            </th>
+            <th>
+                Room number<br />
+                and capacity
+            </th>
+            <th>
+                Room type<br />
+                and extras
+            </th>
+            <th>
+                Accommodation<br />
+                included from-to
+            </th>
+            <th>
+                Overall bill<br />
+                and price per day
+            </th>
+            <th></th>
+        </tr>
+
+    </thead>
+    <tbody>
+        @foreach (ReservationsViewModel item in Model.Items)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.User.FirstName)<br />
+                    @Html.DisplayFor(modelItem => item.User.LastName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Room.Number)<br />
+                    @Html.DisplayFor(modelItem => item.CurrentReservationClientCount) /
+                    @Html.DisplayFor(modelItem => item.Room.Capacity)
+                </td>
+                <td valign="middle">
+                    @Html.DisplayFor(modelItem => item.Room.Type)
+
+                    @if (item.IsAllInclusive)
+                    {
+                        <br />
+                        <b>All inclusive</b>
+                    }
+
+                    @if (item.IsBreakfastIncluded)
+                    {
+                        <br />
+                        <b>Breakfast Included</b>
+                    }
+
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.DateOfAccommodation)<br />
+                    @Html.DisplayFor(modelItem => item.DateOfExemption)
+                </td>
+
+                <td>
+                    @Html.DisplayFor(modelItem => item.OverallBill)<br />
+                    @Html.DisplayFor(modelItem => item.Room.PriceAdult) &nbsp;
+                    (@Html.DisplayFor(modelItem => item.Room.PriceChild))
+                </td>
+
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    <br />
+                    <a asp-action="Detail" asp-route-id="@item.Id">Detail</a>
+                </td>
+
+            </tr>
+        }
+
+        <tr style="background:#f0f0f0">
+            <td colspan="5"></td>
+            <td>
+                <a asp-action="Create"><b>Create new</b></a>
+            </td>
+        </tr>
+
+    </tbody>
+
+</table>

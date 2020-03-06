@@ -1,0 +1,68 @@
+﻿@using Web.Models.Users
+@using Web.Models.Rooms
+@using Web.Models.Clients
+@using Web.Models.Reservations
+@model Web.Models.Reservations.ReservationsViewModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<head>
+    <style>
+        table, th, td {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .change-page-display-amount {
+            background: #e8e8e8;
+            border: 2px solid #d8d8d8;
+            color: black;
+            font: bold;
+        }
+    </style>
+</head>
+
+<h1>Detailed information about reservations for</h1>
+<h3>user: @Model.User.FirstName @Model.User.MiddleName @Model.User.LastName (@Model.User.Username)</h3>
+<h3>room: @Model.Room.Number of type @Model.Room.Type (@Model.CurrentReservationClientCount/@Model.Room.Capacity)</h3>
+<br />
+<br />
+
+<div class="row">
+    <div class="col-md-4">
+
+        @if (Model == null || Model.SignedInClients == null || Model.SignedInClients.Count() == 0)
+        {
+            <h3>no clients</h3>
+        }
+        else
+        {
+            <div style="max-height:300px;overflow-y:scroll">
+                @foreach (var c in Model.SignedInClients)
+                {
+                    <h5>@c.FirstName @c.LastName (@c.Email)</h5>
+                    <br />
+                }
+
+
+            </div>
+        }
+
+    </div>
+
+    <div class="col-md-4">
+        <form asp-action="LinkClientReservation" asp-controller="Reservations" method="post">
+            <input type="hidden" asp-for="Id" />
+            <label asp-for="ClientId" class="control-label">Add clients</label>
+            @Html.DropDownList("ClientId", Model.AvailableClients, "Select client", new { @class = "form-control" })
+            <span asp-validation-for="ClientId" class="text-danger"></span>
+            <br />
+            <div class="form-group">
+                <input type="submit" value="Link to reservation" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+
+</div>

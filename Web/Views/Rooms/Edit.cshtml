@@ -1,0 +1,63 @@
+﻿@using Data.Enumeration
+@model Web.Models.Rooms.RoomsEditViewModel
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit room @Model.Number</h1>
+
+<h4>Car</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit" asp-controller="Rooms" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <div class="form-group">
+                <label asp-for="Number" class="control-label"></label>
+                <input asp-for="Number" class="form-control" type="number" />
+                <span asp-validation-for="Number" class="text-danger"></span>
+            </div>
+            <br />
+            <div class="form-group">
+                <label asp-for="Capacity" class="control-label"></label>
+                <input asp-for="Capacity" class="form-control" />
+                <span asp-validation-for="Capacity" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IsFree" class="control-label"></label>
+                <input asp-for="IsFree" class="form-control" />
+                <span asp-validation-for="IsFree" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="RoomType" class="control-label"></label>
+                @Html.DropDownList("RoomType", Html.GetEnumSelectList<RoomTypeEnum>(), new { @class = "form-control" })
+                <span asp-validation-for="RoomType" class="text-danger"></span>
+            </div>
+            <br />
+            <div class="form-group">
+                <label asp-for="PriceAdult" class="control-label">Bed price (adult)</label>
+                <input asp-for="PriceAdult" class="form-control" type="number" step="0.01" />
+                <span asp-validation-for="PriceAdult" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PriceChild" class="control-label">Bed price (under-age)</label>
+                <input asp-for="PriceChild" class="form-control" type="number" step="0.01" />
+                <span asp-validation-for="PriceChild" class="text-danger"></span>
+            </div>
+            <br />
+            <div class="form-group">
+                <input type="submit" value="Edit" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

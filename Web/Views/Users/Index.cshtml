@@ -1,0 +1,175 @@
+﻿@using Web.Models.Users
+@model Web.Models.Users.UsersIndexViewModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<head>
+    <style>
+        table, th, td {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .change-page-display-amount {
+            background: #e8e8e8;
+            border: 2px solid #d8d8d8;
+            color: black;
+            font: bold;
+        }
+    </style>
+</head>
+
+<h1>Complete information about users</h1>
+<br />
+<h2><a onclick="showHideFilter()" href="#">Filter</a></h2>
+<form asp-action="Index" asp-controller="Users" method="post" id="filterForm" hidden>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row">
+        <div class="col-md-2 form-group">
+            <input asp-for="Filter.Username" class="form-control" placeholder="First name" />
+            <span asp-validation-for="Filter.Username" class="text-danger"></span>
+        </div>
+        <div class="col-md-2 form-group">
+            <input asp-for="Filter.FirstName" class="form-control" placeholder="First name" />
+            <span asp-validation-for="Filter.FirstName" class="text-danger"></span>
+        </div>
+        <div class="col-md-2 form-group">
+            <input asp-for="Filter.MiddleName" class="form-control" placeholder="Middle name" />
+            <span asp-validation-for="Filter.MiddleName" class="text-danger"></span>
+        </div>
+        <div class="col-md-2 form-group">
+            <input asp-for="Filter.LastName" class="form-control" placeholder="Last name" />
+            <span asp-validation-for="Filter.LastName" class="text-danger"></span>
+        </div>
+        <div class="col-md-3 form-group">
+            <input asp-for="Filter.Email" class="form-control" placeholder="Email" />
+            <span asp-validation-for="Filter.Email" class="text-danger"></span>
+        </div>
+        <div class="col-md-1 form-group text-center">
+            <div class="form-group">
+                <input type="submit" value="Filter" class="btn btn-primary" />
+            </div>
+        </div>
+    </div>
+</form>
+
+<br />
+
+<div style="float: right">
+    <ul class="pagination">
+        <li class="page-item" align="right">
+            <a asp-action="ChangePageSize" asp-route-id="10" class="page-link change-page-display-amount">10</a>
+        </li>
+        <li class="page-item" align="right">
+            <a asp-action="ChangePageSize" asp-route-id="25" class="page-link change-page-display-amount">25</a>
+        </li>
+        <li class="page-item" align="right">
+            <a asp-action="ChangePageSize" asp-route-id="50" class="page-link change-page-display-amount">50</a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <ul class="pagination">
+        @for (var i = 1; i <= Model.Pager.PagesCount; i++)
+        {
+            <li class="page-item @(i == Model.Pager.CurrentPage ? "active" : "")">
+                <a asp-route-Pager.CurrentPage="@i" class="page-link">@i</a>
+            </li>
+        }
+
+    </ul>
+</div>
+
+<table class="table" style="text-wrap:initial">
+    <tr>
+        <th>
+            Username
+        </th>
+        <th>
+            F-Name
+        </th>
+        <th>
+            M-Name
+        </th>
+        <th>
+            L-Name
+        </th>
+        <th>
+            Phone
+        </th>
+        <th>
+            Email
+        </th>
+        <th>
+            EGN
+        </th>
+        <th>
+            Hired
+        </th>
+        <th>
+            Status
+        </th>
+        <th></th>
+    </tr>
+    @foreach (UsersViewModel item in Model.Items)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Username)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.FirstName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.MiddleName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.LastName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.TelephoneNumber)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.EGN)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateOfBeingHired)
+            </td>
+            <td>
+                @if (item.DateOfBeingFired != null)
+                {
+                    <b style="color:red">Fired on:<br /> @Html.DisplayFor(modelItem => item.DateOfBeingFired)</b>
+                }
+                else
+                {
+                    <b>still hired</b>
+                }
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+    }
+
+    <tr style="background:#f0f0f0">
+        <td colspan="9"></td>
+        <td>
+            <a asp-action="Create"><b>Create new</b></a>
+        </td>
+    </tr>
+
+</table>
+
+<script>
+    function showHideFilter() {
+        var d = document.getElementById("filterForm");
+        d.hidden = !d.hidden;
+    }
+</script>

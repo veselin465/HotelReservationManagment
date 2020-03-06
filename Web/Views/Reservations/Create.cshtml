@@ -1,0 +1,86 @@
+﻿@using Data.Enumeration
+@using Web.Models.Reservations
+@using Web.Models.Users
+@using Web.Models.Rooms
+@using Web.Models.Clients
+
+
+@model Web.Models.Reservations.ReservationsCreateViewModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Make reservation</h1>
+
+<hr />
+
+@if (Model.Message != null)
+{
+
+    <h5 style="color:red;">Last action was not completed:</h5>
+    <h5 style="color:red;">@Model.Message</h5>
+    <hr />
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create" asp-controller="Reservations" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <br />
+
+            <div class="form-group">
+                <label asp-for="RoomId" class="control-label">Room number</label>
+                @Html.DropDownList("RoomId", Model.Rooms, "Select room number", new { @class = "form-control" })
+                <span asp-validation-for="RoomId" class="text-danger"></span>
+            </div>
+
+            <br />
+
+            <div class="form-group">
+                <label asp-for="UserId" class="control-label">Reservation is in the name of</label>
+                @Html.DropDownList("UserId", Model.Users, "Select user", new { @class = "form-control" })
+                <span asp-validation-for="UserId" class="text-danger"></span>
+            </div>
+
+            <br />
+            <div class="form-group">
+                <label asp-for="DateOfAccommodation" class="control-label">Date of Accommodation</label>
+                <input asp-for="DateOfAccommodation" class="form-control" type="date" />
+                <span asp-validation-for="DateOfAccommodation" class="text-danger"></span>
+            </div>
+            <br />
+            <div class="form-group">
+                <label asp-for="DateOfExemption" class="control-label">Date of Exemption </label>
+                <input asp-for="DateOfExemption" class="form-control" type="date" />
+                <span asp-validation-for="DateOfExemption" class="text-danger"></span>
+            </div>
+
+            <br />
+
+            <div class="form-group">
+                <label asp-for="IsBreakfastIncluded" class="control-label">Breakfast included</label>
+                <input asp-for="IsBreakfastIncluded" class="form-control" type="checkbox" />
+                <span asp-validation-for="IsBreakfastIncluded" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IsAllInclusive" class="control-label">All Inclusive</label>
+                <input asp-for="IsAllInclusive" class="form-control" type="checkbox" />
+                <span asp-validation-for="IsAllInclusive" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Make reservation" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

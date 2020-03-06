@@ -1,0 +1,34 @@
+USE HotelReservationDb;
+
+INSERT INTO dbo.Users (Username,Password,FirstName,MiddleName,LastName,EGN,TelephoneNumber,Email,DateOfBeingHired,IsActive)
+VALUES ('admin','admin','admin','admin','admin','0000000000','0000000000','admin@gmail.com',GETUTCDATE(),1)
+
+INSERT INTO dbo.Clients (FirstName,LastName,TelephoneNumber,Email,IsAdult)
+VALUES 
+	('veselin','penev',	'0898444444','veselinpenev2001@gmail.com',1),
+	('ivan','ivanov',	'0899555555','ivanIvanov1998@gmail.com',0),
+	('hristo','ivanov',	'0787555555','hIvanov2k@gmail.com',1),
+	('georgi','vasilev',	'0899000000','georgiV4s1l3v@gmail.com',0),
+	('gabriela','kostadinova',	'0787660000','gabrielaKostadinova12@gmail.com',1),
+	('viktoria','hristova',	'0787690000','v_hristova_2001@gmail.com',1),
+	('gabriela','angelova',	'0887660000','gabrielaA2005@abv.bg',0),
+	('kristiqn','petrov',	'0987660000','kr1st1qn1999@gmail.com',1),
+	('Kevin','petrov',	'0787669000','kevinPetkov2007@abv.bg',0),
+	('kristiqn','velkov',	'0700633000','kristiqn.velk0v@gmail.com',FLOOR(RAND()*2)),
+	('ivan','simeonov',	'0783660000','i.simeonov.2008@abv.bg',0),
+	('peter','parker',	'0783460000','spiderman@fake.com',1),
+	('simeon','kostadinov',	'0987650000','simeonK2001@gmail.com',1)
+
+INSERT INTO dbo.Rooms (Number,Capacity,PriceAdult,PriceChild,Type,IsFree)
+VALUES 
+	(103, 2, 19.90,	15.90, 0, 1),
+	(104, 4, 21.70,	17.70, 1, 1),
+	(201, 3, 29.90,	19.90, 1, 1),
+	(202, 3, 25.90,	16.90, 1, 1),
+	(203, 4, 99.90, 79.90, 4, 1),
+	(301, 5, 89.90,	69.90, 3, 1),
+	(302, 3, 69.90,	55.90, 3, 1),
+	(303, 2, 17.90,	14.90, 2, 1),
+	(401, 12,49.90,	37.90, 4, 1),
+	(402, 2, 26.90,	20.90, 0, 1),
+	(403, 2, 29.90,	25.90, 2, 1)
