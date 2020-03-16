@@ -57,8 +57,6 @@ namespace Web.Models.Users
         [DataType(DataType.EmailAddress)]
         public string Email { get; set; }
 
-        [Required]
-        public bool IsAdult { get; set; }
 
         public string Message { get; set; }
 

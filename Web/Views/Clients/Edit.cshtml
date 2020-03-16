@@ -6,7 +6,6 @@
 }
 
 <h1>Edit Clients</h1>
-
 <hr />
 
 <div class="row">
@@ -56,5 +55,5 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ Html.RenderPartial("_ValidationScriptsPartial");}
 }

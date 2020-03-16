@@ -1,1 +1,138 @@
-﻿
+﻿@using Web.Models.Users
+@using Web.Models.Rooms
+@using Web.Models.Clients
+@using Web.Models.Reservations
+@model Web.Models.Clients.ClientsDetailViewModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<head>
+    <style>
+
+        table, th, td {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .change-page-display-amount {
+            background: #e8e8e8;
+            border: 2px solid #d8d8d8;
+            color: black;
+            font: bold;
+        }
+
+        .common-factor-font {
+            font-family: Consolas;
+        }
+    </style>
+</head>
+
+@if (Model == null)
+{
+    <h1 class="text-danger">Not found</h1>
+}
+else
+{
+
+    <h1>Detailed information about Client:</h1>
+    <br />
+    <h3>
+        <span class="common-factor-font">NAME: </span>
+        @Model.FirstName @Model.LastName
+        @if (Model.IsAdult)
+        {
+            <spam>(adult)</spam>
+        }
+        else
+        {
+            <spam>(under-aged)</spam>
+        }
+    </h3>
+    <h3>
+        <span class="common-factor-font">CONTACT: </span>
+        Phone: @Model.TelephoneNumber and Email: @Model.Email
+    </h3>
+
+    <div class="row">
+        <div class="col-md-4">
+
+        </div>
+    </div>
+
+    <br />
+    <br />
+
+    <div class="row">
+        <div class="col-md-6">
+
+            <h3>Past reservations</h3>
+            <br />
+            @if (Model == null || Model.PastReservations == null || Model.PastReservations.Count() == 0)
+            {
+                <h2>no past reservations, yet</h2>
+            }
+            else
+            {
+
+
+                <div style="max-height:500px;overflow-y:scroll">
+                    <br>
+
+                    @foreach (var c in Model.PastReservations)
+                    {
+                        <h5>
+                            Room number @c.Room.Number (type: @c.Room.Type; capacity: @c.Room.Capacity) dating from @c.DateOfAccommodation to @c.DateOfExemption with:
+                            @if (c.IsBreakfastIncluded)
+                            {<i> +Breakfast </i>}
+                            @if (c.IsAllInclusive)
+                            {<i> +All-inclusive</i>}
+                        </h5>
+                        <br />
+                    }
+
+
+                </div>
+            }
+
+        </div>
+
+
+        <div class="col-md-6">
+
+            <h3>Upcoming reservations</h3>
+            <br />
+            @if (Model == null || Model.PastReservations == null || Model.PastReservations.Count() == 0)
+            {
+                <h2>no upcoming reservations, yet</h2>
+            }
+            else
+            {
+
+
+                <div style="max-height:500px;overflow-y:scroll">
+                    <br>
+
+                    @foreach (var c in Model.UpcomingReservations)
+                    {
+                        <h5>
+                            Room number @c.Room.Number (type: @c.Room.Type; capacity: @c.Room.Capacity) dating from @c.DateOfAccommodation to @c.DateOfExemption with:
+                            @if (c.IsBreakfastIncluded)
+                            {<i> +Breakfast </i>}
+                            @if (c.IsAllInclusive)
+                            {<i> +All-inclusive</i>}
+                        </h5>
+                        <br />
+                    }
+
+
+                </div>
+            }
+
+        </div>
+
+
+    </div>
+}
+

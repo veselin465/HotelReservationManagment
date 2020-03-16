@@ -22,5 +22,7 @@ namespace Web.Models.Clients
 
         public ICollection<ReservationsViewModel> PastReservations { get; set; }
 
+        public ICollection<ReservationsViewModel> UpcomingReservations { get; set; }
+
     }
 }

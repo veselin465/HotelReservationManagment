@@ -26,25 +26,27 @@
 
 <br />
 
-<h2><a onclick="showHideFilter()" href="#">Filter</a></h2>
-    <form asp-action="Index" asp-controller="Clients" method="post" id="filterForm" hidden>
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-        <div class="row">
-            <div class="col-md-2 form-group">
-                <input asp-for="Filter.FirstName" class="form-control" placeholder="First name" />
-                <span asp-validation-for="Filter.FirstName" class="text-danger"></span>
-            </div>
-            <div class="col-md-2 form-group">
-                <input asp-for="Filter.LastName" class="form-control" placeholder="Last name" />
-                <span asp-validation-for="Filter.LastName" class="text-danger"></span>
-            </div>
-            <div class="col-md-1 form-group text-center">
-                <div class="form-group">
-                    <input type="submit" value="Filter" class="btn btn-primary" />
-                </div>
+<form asp-action="Index" asp-controller="Clients" method="post" id="filterForm">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row">
+        <div class="col-md-2 form-group">
+            <h3><b>FILTER BY</b></h3>
+        </div>
+        <div class="col-md-3 form-group">
+            <input asp-for="Filter.FirstName" class="form-control" placeholder="First name" />
+            <span asp-validation-for="Filter.FirstName" class="text-danger"></span>
+        </div>
+        <div class="col-md-3 form-group">
+            <input asp-for="Filter.LastName" class="form-control" placeholder="Last name" />
+            <span asp-validation-for="Filter.LastName" class="text-danger"></span>
+        </div>
+        <div class="col-md-1 form-group text-center">
+            <div class="form-group">
+                <input type="submit" value="Filter" class="btn btn-primary" />
             </div>
         </div>
-    </form>
+    </div>
+</form>
 
 <br />
 
@@ -125,16 +127,17 @@
 
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a> | 
+                    <a asp-action="Detail" asp-route-id="@item.Id">Detail</a>
                 </td>
             </tr>
         }
-    <tr style="background:#f0f0f0">
-        <td colspan="5"></td>
-        <td>
-            <a asp-action="Create"><b>Create new</b></a>
-        </td>
-    </tr>
+        <tr style="background:#f0f0f0">
+            <td colspan="5"></td>
+            <td>
+                <a asp-action="Create"><b>Create new</b></a>
+            </td>
+        </tr>
     </tbody>
 </table>
 

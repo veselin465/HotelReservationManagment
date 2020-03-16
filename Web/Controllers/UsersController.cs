@@ -34,20 +34,8 @@ namespace Web.Controllers
             return RedirectToAction("Index");
         }
 
-        /*
-        public IActionResult ChangePageSize(PageCountChangeViewModel PageProperties)
-        {
-
-            if (PageProperties.PagesCount > 0)
-            {
-                PageSize = PageProperties.PagesCount;
-            }
-
-            return RedirectToAction("Index");
-        }*/
-
         // GET: Users
-        public async Task<IActionResult> Index(UsersIndexViewModel model)
+        public IActionResult Index(UsersIndexViewModel model)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -58,7 +46,7 @@ namespace Web.Controllers
             model.Pager ??= new PagerViewModel();
             model.Pager.CurrentPage = model.Pager.CurrentPage <= 0 ? 1 : model.Pager.CurrentPage;
 
-            var allUsers = await _context.Users.Where(x => x.IsActive).ToListAsync();
+            var allUsers =  _context.Users.ToList();
 
             var contextDb = Filter(allUsers, model.Filter);
 
@@ -79,7 +67,7 @@ namespace Web.Controllers
             }).ToList();
 
             model.Items = items;
-            model.Pager.PagesCount = (int)Math.Ceiling(await _context.Users.CountAsync() / (double)this.PageSize);
+            model.Pager.PagesCount = Math.Max(1,(int)Math.Ceiling(contextDb.Count() / (double)this.PageSize));
 
             return View(model);
         }
@@ -88,25 +76,25 @@ namespace Web.Controllers
         public IActionResult Create()
         {
 
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator && _context.Users.Where(x=>x.IsActive).Count() != 0)
             {
                 UsersLogInViewModel model1 = new UsersLogInViewModel();
                 model1.Message = "You dont meet the required permission to do this. Please, log in into account with admin permissions";
                 return View("LogIn", model1);
             }
 
-            UsersCreateViewModel model = new UsersCreateViewModel();
+            //UsersCreateViewModel model = new UsersCreateViewModel();
 
-            return View(model);
+            return View();
         }
 
         // POST: Users/Create        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(UsersCreateViewModel createModel)
+        public IActionResult Create(UsersCreateViewModel createModel)
         {
 
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator && _context.Users.Where(x => x.IsActive).Count() != 0)
             {
                 UsersLogInViewModel model1 = new UsersLogInViewModel();
                 model1.Message = "You dont meet the required permission to do this. Please, log in into account with admin permissions";
@@ -125,12 +113,6 @@ namespace Web.Controllers
                 return View(createModel);
             }
 
-            if (!createModel.IsAdult)
-            {
-                createModel.Message = "The checkbox is required";
-                return View(createModel);
-            }
-
             createModel.Message = null;
             if (ModelState.IsValid)
             {
@@ -146,22 +128,17 @@ namespace Web.Controllers
                     TelephoneNumber = createModel.TelephoneNumber
                 };
 
-                _context.Add(user);
-                await _context.SaveChangesAsync();
+                _context.Users.Add(user);
+                 _context.SaveChanges();
 
-                Client client = new Client
+                if (_context.Users.Where(x => x.IsActive).Count() == 1)
                 {
-                    FirstName = createModel.FirstName,
-                    LastName = createModel.LastName,
-                    Email = createModel.Email,
-                    TelephoneNumber = createModel.TelephoneNumber,
-                    IsAdult = true
-                };
-
-                _context.Add(client);
-                await _context.SaveChangesAsync();
+                    GlobalVar.LoggedOnUserId = _context.Users.Where(x => x.IsActive).First().Id;
+                    GlobalVar.LoggedOnUserRights = GlobalVar.UserRights.Admininstrator;
+                }
 
                 return RedirectToAction(nameof(Index));
+
             }
 
             return View(createModel);
@@ -181,22 +158,30 @@ namespace Web.Controllers
 
             if (user == null || (user.Password != model.Password))
             {
-
-                UsersLogInViewModel model1 = new UsersLogInViewModel();
-                model1.Message = "Username and password combination doesnt match";
+                UsersLogInViewModel model1 = new UsersLogInViewModel
+                {
+                    Message = "Username and password combination doesnt match"
+                };
                 return View(model1);
+            }
 
-
+            if (!user.IsActive)
+            {
+                UsersLogInViewModel model1 = new UsersLogInViewModel
+                {
+                    Message = "This user is no longer active and therefore you cannot use it."
+                };
+                return View(model1);
             }
 
             GlobalVar.LoggedOnUserId = user.Id;
-            if (user.Id == 1)
+            if (user.Id == _context.Users.Where(x => x.IsActive).First().Id)
             {
-                GlobalVar.LoggedOnUserRights = GlobalVar.UserRights.admininstration;
+                GlobalVar.LoggedOnUserRights = GlobalVar.UserRights.Admininstrator;
             }
             else
             {
-                GlobalVar.LoggedOnUserRights = GlobalVar.UserRights.defaultUser;
+                GlobalVar.LoggedOnUserRights = GlobalVar.UserRights.DefaultUser;
             }
 
             return RedirectToAction("Index", "Users");
@@ -204,10 +189,10 @@ namespace Web.Controllers
         }
 
         // GET: Users/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
 
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 UsersLogInViewModel model1 = new UsersLogInViewModel();
                 model1.Message = "You dont meet the required permission to do this. Please, log in into account with admin permissions";
@@ -219,7 +204,7 @@ namespace Web.Controllers
                 return NotFound();
             }
 
-            User user = await _context.Users.FindAsync(id);
+            User user =  _context.Users.Find(id);
             if (user == null)
             {
                 return NotFound();
@@ -235,7 +220,9 @@ namespace Web.Controllers
                 LastName = user.LastName,
                 EGN = user.EGN,
                 Email = user.Email,
-                TelephoneNumber = user.TelephoneNumber
+                TelephoneNumber = user.TelephoneNumber,
+                IsActive = user.IsActive,
+                FiredOn = user.DateOfBeingFired
             };
 
             return View(model);
@@ -244,10 +231,10 @@ namespace Web.Controllers
         // POST: Users/Edit/5       
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(UsersEditViewModel editModel)
+        public IActionResult Edit(UsersEditViewModel editModel)
         {
 
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 UsersLogInViewModel model1 = new UsersLogInViewModel();
                 model1.Message = "You dont meet the required permission to do this. Please, log in into account with admin permissions";
@@ -260,21 +247,19 @@ namespace Web.Controllers
                 User user = new User()
                 {
                     Id = editModel.Id,
-                    Username = editModel.Username,
                     Password = editModel.Password,
                     FirstName = editModel.FirstName,
                     MiddleName = editModel.MiddleName,
                     LastName = editModel.LastName,
                     EGN = editModel.EGN,
                     Email = editModel.Email,
-                    TelephoneNumber = editModel.TelephoneNumber,
-
+                    TelephoneNumber = editModel.TelephoneNumber
                 };
 
                 try
                 {
                     _context.Update(user);
-                    await _context.SaveChangesAsync();
+                     _context.SaveChanges();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -296,25 +281,26 @@ namespace Web.Controllers
         }
 
         // GET: Users/Delete/5
-        public async Task<IActionResult> Delete(int id)
+        public IActionResult Delete(int id)
         {
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 UsersLogInViewModel model1 = new UsersLogInViewModel();
                 model1.Message = "You dont meet the required permission to do this. Please, log in into account with admin permissions";
                 return View("LogIn", model1);
             }
 
-            if (id == 1)
-            {
-                throw new ArgumentException("----------------------------------------------\nPlease, do not erase yourself----------------------------------------------");
-            }
-
-            User user = await _context.Users.FindAsync(id);
+            User user =  _context.Users.Find(id);
             user.DateOfBeingFired = DateTime.UtcNow;
             user.IsActive = false;
             _context.Users.Update(user);
-            await _context.SaveChangesAsync();
+             _context.SaveChanges();
+
+            if(user.Id == GlobalVar.LoggedOnUserId)
+            {
+                GlobalVar.LoggedOnUserId = -1;
+                GlobalVar.LoggedOnUserRights = GlobalVar.UserRights.DefaultUser;
+            }
 
             return RedirectToAction(nameof(Index));
         }

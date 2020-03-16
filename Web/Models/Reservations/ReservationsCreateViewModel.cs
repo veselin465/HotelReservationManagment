@@ -11,16 +11,13 @@ namespace Web.Models.Reservations
 {
     public class ReservationsCreateViewModel
     {
-        /*[Required]
-        [StringLength(50, ErrorMessage = "add-error-message")]*/
 
-
-
+        [Required]
         [DataType(DataType.Date)]
-        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}")]
         public DateTime DateOfAccommodation { get; set; } = DateTime.UtcNow;
 
-
+        [Required]
         [DataType(DataType.Date)]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime DateOfExemption { get; set; } = DateTime.UtcNow;

@@ -25,6 +25,7 @@ namespace Web.Models.Clients
 
         [Required]
         [DataType(DataType.PhoneNumber)]
+        [RegularExpression(@"^[0-9]+$", ErrorMessage = "Use digits only please")]
         [StringLength(10, ErrorMessage = "Phone number cannot be longer than 10 characters)")]
         public string TelephoneNumber { get; set; }
 

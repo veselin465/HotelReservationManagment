@@ -18,12 +18,18 @@ namespace Web.Models.Reservations
         public int Id { get; set; }
 
         [Required]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime DateOfAccommodation { get; set; }
+
         [Required]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime DateOfExemption { get; set; }
 
         [Required]
         public bool IsBreakfastIncluded { get; set; }
+
         [Required]
         public bool IsAllInclusive { get; set; }
 

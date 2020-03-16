@@ -13,6 +13,7 @@ using Web.Models.Rooms;
 using Web.Models.Clients;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Data.Enumeration;
+using System.Diagnostics;
 
 namespace Web.Controllers
 {
@@ -39,7 +40,7 @@ namespace Web.Controllers
         }
 
         // GET: Reservations
-        public async Task<IActionResult> Index(ReservationsIndexViewModel model)
+        public IActionResult Index(ReservationsIndexViewModel model)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -50,7 +51,7 @@ namespace Web.Controllers
             model.Pager ??= new PagerViewModel();
             model.Pager.CurrentPage = model.Pager.CurrentPage <= 0 ? 1 : model.Pager.CurrentPage;
 
-            List<Reservation> reservations = await _context.Reservations.Skip((model.Pager.CurrentPage - 1) * PageSize).Take(PageSize).ToListAsync();
+            List<Reservation> reservations =  _context.Reservations.Skip((model.Pager.CurrentPage - 1) * PageSize).Take(PageSize).ToList();
 
             List<ReservationsViewModel> list = new List<ReservationsViewModel>();
 
@@ -94,7 +95,7 @@ namespace Web.Controllers
             }
 
             model.Items = list;
-            model.Pager.PagesCount = (int)Math.Ceiling(await _context.Reservations.CountAsync() / (double)PageSize);
+            model.Pager.PagesCount = Math.Max(1, (int)Math.Ceiling( _context.Reservations.Count() / (double)PageSize));
 
             return View(model);
         }
@@ -118,7 +119,7 @@ namespace Web.Controllers
         // POST: Reservations/Create        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ReservationsCreateViewModel createModel)
+        public IActionResult Create(ReservationsCreateViewModel createModel)
         {
             if (GlobalVar.LoggedOnUserId == -1)
             {
@@ -143,9 +144,9 @@ namespace Web.Controllers
 
                 foreach (var item in _context.Reservations.Where(x => x.RoomId == roomId))
                 {
-                    if ((item.DateOfAccommodation > createModel.DateOfAccommodation && item.DateOfAccommodation < createModel.DateOfExemption)
+                    if ((item.DateOfAccommodation >= createModel.DateOfAccommodation && item.DateOfAccommodation < createModel.DateOfExemption)
                         ||
-                        (item.DateOfExemption > createModel.DateOfAccommodation && item.DateOfExemption < createModel.DateOfExemption))
+                        (item.DateOfExemption > createModel.DateOfAccommodation && item.DateOfExemption <= createModel.DateOfExemption))
                     {
                         createModel = CreateReservationVMWithDropdown(createModel, $"Room is already reserved for the chosen period. Either choose a period before {item.DateOfAccommodation}, or after {item.DateOfExemption}");
 
@@ -164,18 +165,18 @@ namespace Web.Controllers
                     OverallBill = 0
                 };
 
-                _context.Add(reservation);
-                await _context.SaveChangesAsync();
+                _context.Reservations.Add(reservation);
+                 _context.SaveChanges();
 
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(createModel);
+            return RedirectToAction(nameof(Index));
         }
 
 
 
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -188,13 +189,13 @@ namespace Web.Controllers
                 return NotFound();
             }
 
-            Reservation reservation = await _context.Reservations.FindAsync(id);
+            Reservation reservation =  _context.Reservations.Find(id);
             if (reservation == null)
             {
 
                 return NotFound();
             }
-            Room room = await _context.Rooms.FindAsync(reservation.RoomId);
+
             ReservationsEditViewModel model = new ReservationsEditViewModel()
             {
                 Id = reservation.Id,
@@ -211,7 +212,7 @@ namespace Web.Controllers
         // POST: Clients/Edit/5       
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(ReservationsEditViewModel editModel)
+        public IActionResult Edit(ReservationsEditViewModel editModel)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -252,8 +253,8 @@ namespace Web.Controllers
                
                 try
                 {
-                    _context.Update(reservation);
-                    await _context.SaveChangesAsync();
+                    _context.Reservations.Update(reservation);
+                     _context.SaveChanges();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -268,8 +269,8 @@ namespace Web.Controllers
                 }
 
                 reservation.OverallBill = CalculateOverAllPrice(reservation.Id);
-                _context.Update(reservation);
-                await _context.SaveChangesAsync();
+                _context.Reservations.Update(reservation);
+                 _context.SaveChanges();
 
 
                 return RedirectToAction(nameof(Index));
@@ -279,26 +280,36 @@ namespace Web.Controllers
         }
 
 
+        public IActionResult Delete(int id)
+        {
+
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
+            {
+                return RedirectToAction("LogInPermissionDenied", "Users");
+            }
+
+            Reservation reservation = _context.Reservations.Find(id);
+            _context.Reservations.Remove(reservation);
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+
         // GET: Reservations/Detail
-        public async Task<IActionResult> Detail(int? id)
+        public IActionResult Detail(int? id)
         {
             if (GlobalVar.LoggedOnUserId == -1)
             {
                 return RedirectToAction("LogInRequired", "Users");
             }
 
-            if (id == null)
+            if (id == null || !ReservationExists((int)id))
             {
                 return NotFound();
             }
 
-            Reservation reservation = await _context.Reservations.FindAsync(id);
-
-            if (reservation == null)
-            {
-                return NotFound();
-            }
-
+            Reservation reservation =  _context.Reservations.Find(id);
 
             UsersViewModel userVM = new UsersViewModel()
             {
@@ -319,9 +330,9 @@ namespace Web.Controllers
                 Type = (RoomTypeEnum)reservation.Room.Type
             };
 
-            var allClients = await _context.Clients.ToListAsync();
+            var allClients =  _context.Clients.ToList();
 
-            var allClientReservations = await _context.ClientReservation.Where(x => x.ReservationId == id).ToListAsync();
+            var allClientReservations =  _context.ClientReservation.Where(x => x.ReservationId == id).ToList();
 
             var reservedClients = new List<Client>();
 
@@ -330,7 +341,7 @@ namespace Web.Controllers
             foreach (var clientReservation in allClientReservations)
             {
                 availableClients.RemoveAll(x => x.Id == clientReservation.ClientId);
-                var client = (await _context.Clients.FindAsync(clientReservation.ClientId));
+                var client = ( _context.Clients.Find(clientReservation.ClientId));
                 reservedClients.Add(client);
             }
 
@@ -369,7 +380,7 @@ namespace Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LinkClientReservation(ReservationsViewModel linkModel)
+        public IActionResult LinkClientReservation(ReservationsViewModel linkModel)
         {
             if (GlobalVar.LoggedOnUserId == -1)
             {
@@ -389,16 +400,15 @@ namespace Web.Controllers
                 return RedirectToAction("Detail", new { id = reservationId });
             }
 
-
             var clientReservation = new ClientReservation()
             {
                 ClientId = clientId,
                 ReservationId = reservationId
             };
 
-            var currentRoomOccupyCount = (await _context.ClientReservation.Where(x => x.ReservationId == reservationId).ToListAsync()).Count;
+            var currentRoomOccupyCount = ( _context.ClientReservation.Where(x => x.ReservationId == reservationId).ToList()).Count;
 
-            Room room = await _context.Rooms.FindAsync(_context.Reservations.Find(reservationId).RoomId);
+            Room room =  _context.Rooms.Find(_context.Reservations.Find(reservationId).RoomId);
 
 
             if (currentRoomOccupyCount >= room.Capacity)
@@ -406,40 +416,37 @@ namespace Web.Controllers
                 return RedirectToAction("Detail", new { id = reservationId });
             }
 
-
             var elem = _context.ClientReservation.Find(clientId, reservationId);
 
             if (elem != null)
             {
-                throw new ArgumentException($"CUSTOM EXCEPTION: This client {clientId} is already added to this reservation {reservationId}");
+                throw new InvalidOperationException($"CUSTOM EXCEPTION: This client {clientId} is already added to this reservation {reservationId}");
             }
             else
             {
                 _context.ClientReservation.Add(clientReservation);
-                
-                await _context.SaveChangesAsync();
+                 _context.SaveChanges();
 
-                bool isClientAdult = (await _context.Clients.FindAsync(clientId)).IsAdult;
+                bool isClientAdult = ( _context.Clients.Find(clientId)).IsAdult;
                 decimal pricePerDay = 0;
                 if (isClientAdult)
                 {
-                    pricePerDay += (await _context.Rooms.FindAsync(room.Id)).PriceAdult;
+                    pricePerDay += ( _context.Rooms.Find(room.Id)).PriceAdult;
                 }
                 else
                 {
-                    pricePerDay += (await _context.Rooms.FindAsync(room.Id)).PriceChild;
+                    pricePerDay += ( _context.Rooms.Find(room.Id)).PriceChild;
                 }
 
-                Reservation reservation = await _context.Reservations.FindAsync(reservationId);
+                Reservation reservation =  _context.Reservations.Find(reservationId);
                 decimal clientOverall = pricePerDay*CalculateDaysPassed(reservation.DateOfAccommodation, reservation.DateOfExemption);
                 clientOverall = AddExtras(clientOverall, reservation.IsAllInclusive, reservation.IsBreakfastIncluded);
                 reservation.OverallBill += clientOverall;
 
                 _context.Reservations.Update(reservation);
-                await _context.SaveChangesAsync();
+                 _context.SaveChanges();
             }
             return RedirectToAction("Detail", new { id = reservationId });
-            //return View("Detail",linkModel);
         }
 
         private bool ReservationExists(int id)
@@ -502,7 +509,7 @@ namespace Web.Controllers
             }
             if (isBreakfastIncluded)
             {
-                bonusPercentage += GlobalVar.InlcludedBreakfastBonusExtraBillPercentage;
+                bonusPercentage += GlobalVar.InlcludedBreakfastExtraBillPercentage;
             }
             return money * (1 + bonusPercentage / 100);
         }
@@ -519,13 +526,13 @@ namespace Web.Controllers
         {
             model.Message = message;
 
-            model.Rooms = _context.Rooms.ToList().Select(x => new SelectListItem()
+            model.Rooms = _context.Rooms.Select(x => new SelectListItem()
             {
                 Text = $"{x.Number.ToString()} [0/{x.Capacity}] (type: {((RoomTypeEnum)x.Type).ToString()})",
                 Value = x.Id.ToString()
             }).ToList();
 
-            model.Users = _context.Users.Select(x => new SelectListItem()
+            model.Users = _context.Users.Where(x => x.IsActive).Select(x => new SelectListItem()
             {
                 Text = x.FirstName + " " + x.LastName + " (" + x.Email + ")",
                 Value = x.Id.ToString()

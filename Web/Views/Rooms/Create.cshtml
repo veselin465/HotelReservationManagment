@@ -8,7 +8,7 @@
 <h1>Create room</h1>
 <hr />
 
-@if (Model.Message != null)
+@if (Model != null && Model.Message != null)
 {
 
     <h5 style="color:red;">Last action was not completed:</h5>
@@ -38,12 +38,26 @@
             <br />
             <div class="form-group">
                 <label asp-for="PriceAdult" class="control-label">Bed price (adult)</label>
-                <input asp-for="PriceAdult" class="form-control" type="number" step="0.01" value="0.00" />
+                @if (Model != null && Model.PriceAdult > 0)
+                {
+                    <input asp-for="PriceAdult" class="form-control" type="number" step="0.01" value="@Model.PriceAdult" />
+                }
+                else
+                {
+                    <input asp-for="PriceAdult" class="form-control" type="number" step="0.01" value="0.00" />
+                }
                 <span asp-validation-for="PriceAdult" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="PriceChild" class="control-label">Bed price (under-age)</label>
-                <input asp-for="PriceChild" class="form-control" type="number" step="0.01" value="0.00" />
+                @if (Model != null && Model.PriceChild > 0)
+                {
+                    <input asp-for="PriceChild" class="form-control" type="number" step="0.01" value="@Model.PriceChild" />
+                }
+                else
+                {
+                    <input asp-for="PriceChild" class="form-control" type="number" step="0.01" value="0.00" />
+                }
                 <span asp-validation-for="PriceChild" class="text-danger"></span>
             </div>
             <br />
@@ -59,5 +73,5 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ Html.RenderPartial("_ValidationScriptsPartial");}
 }

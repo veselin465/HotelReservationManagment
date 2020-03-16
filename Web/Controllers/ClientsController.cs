@@ -9,6 +9,8 @@ using Data.Entity;
 using Web.Models.Clients;
 using Web.Models.Shared;
 using Web.Models.Reservations;
+using Web.Models.Rooms;
+using Data.Enumeration;
 
 namespace Web.Controllers
 {
@@ -35,7 +37,7 @@ namespace Web.Controllers
         }
 
         // GET: Clients
-        public async Task<IActionResult> Index(ClientsIndexViewModel model)
+        public IActionResult Index(ClientsIndexViewModel model)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -46,7 +48,7 @@ namespace Web.Controllers
             model.Pager ??= new PagerViewModel();
             model.Pager.CurrentPage = model.Pager.CurrentPage <= 0 ? 1 : model.Pager.CurrentPage;
 
-            var contextDb = Filter(await _context.Clients.ToListAsync(), model.Filter);
+            var contextDb = Filter( _context.Clients.ToList(), model.Filter);
 
             List<ClientsViewModel> items = contextDb.Skip((model.Pager.CurrentPage - 1) * PageSize).Take(PageSize).Select(c => new ClientsViewModel()
             {
@@ -58,9 +60,12 @@ namespace Web.Controllers
                 IsAdult = c.IsAdult
             }).ToList();
 
+            if (model.Filter == null)
+            {
+                model.Filter = new ClientsFilterViewModel();
+            }
             model.Items = items;
-            model.Filter = new ClientsFilterViewModel();
-            model.Pager.PagesCount = (int)Math.Ceiling(await _context.Clients.CountAsync() / (double)PageSize);
+            model.Pager.PagesCount = Math.Max(1, (int)Math.Ceiling(contextDb.Count() / (double)PageSize));
 
             return View(model);
         }
@@ -82,7 +87,7 @@ namespace Web.Controllers
         // POST: Clients/Create        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ClientsCreateViewModel createModel)
+        public IActionResult Create(ClientsCreateViewModel createModel)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -101,17 +106,16 @@ namespace Web.Controllers
                     IsAdult = createModel.IsAdult
                 };
 
-                _context.Add(client);
-                await _context.SaveChangesAsync();
+                _context.Clients.Add(client);
+                _context.SaveChanges();
 
                 return RedirectToAction(nameof(Index));
             }
-
-            return View(createModel);
+            return View();
         }
 
         // GET: Clients/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -124,7 +128,7 @@ namespace Web.Controllers
                 return NotFound();
             }
 
-            Client client = await _context.Clients.FindAsync(id);
+            Client client =  _context.Clients.Find(id);
             if (client == null)
             {
 
@@ -147,7 +151,7 @@ namespace Web.Controllers
         // POST: Clients/Edit/5       
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(ClientsEditViewModel editModel)
+        public IActionResult Edit(ClientsEditViewModel editModel)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -170,7 +174,7 @@ namespace Web.Controllers
                 try
                 {
                     _context.Update(client);
-                    await _context.SaveChangesAsync();
+                     _context.SaveChanges();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -192,7 +196,7 @@ namespace Web.Controllers
 
 
 
-        public async Task<IActionResult> Detail(int? id)
+        public IActionResult Detail(int? id)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -200,48 +204,70 @@ namespace Web.Controllers
                 return RedirectToAction("LogInRequired", "Users");
             }
 
-            if (id == null)
+            if (id == null||!ClientExists((int)id))
             {
                 return NotFound();
             }
 
-            Client client = await _context.Clients.FindAsync(id);
-            List<Reservation> reservations = await _context.Reservations.ToListAsync();
-            List<ClientReservation> clientReservations = await _context.ClientReservation.Where(x => x.ClientId == id).ToListAsync();
+            Client client =  _context.Clients.Find(id);
+            List<Reservation> reservations =  _context.Reservations.ToList();
+            List<ClientReservation> clientReservations =  _context.ClientReservation.Where(x => x.ClientId == id).ToList();
 
             foreach (var cr in clientReservations)
             {
                 reservations.RemoveAll(x => x.Id == cr.ReservationId);
             }
 
-
-            ClientsDetailViewModel x = new ClientsDetailViewModel()
+            ClientsDetailViewModel model = new ClientsDetailViewModel()
             {
                 FirstName = client.FirstName,
                 LastName = client.LastName,
                 Email = client.Email,
                 IsAdult = client.IsAdult,
-                PastReservations = reservations.Where(x=>x.DateOfExemption<DateTime.UtcNow).Select(x=>new ReservationsViewModel()
+                PastReservations = reservations.Where(x => x.DateOfExemption.AddHours(GlobalVar.DefaultReservationHourStart) < DateTime.UtcNow).Select(x=>new ReservationsViewModel()
                 {
                     Id = x.Id,
-                    DateOfAccommodation = x.DateOfAccommodation,
-                    DateOfExemption = x.DateOfExemption,
+                    DateOfAccommodation = x.DateOfAccommodation.AddHours(GlobalVar.DefaultReservationHourStart),
+                    DateOfExemption = x.DateOfExemption.AddHours(GlobalVar.DefaultReservationHourStart),
+                    IsBreakfastIncluded = x.IsBreakfastIncluded,
                     IsAllInclusive = x.IsAllInclusive,
-                    OverallBill = x.OverallBill
-                }).ToList()
+                    OverallBill = x.OverallBill,
+                    Room = new RoomsViewModel()
+                    {
+                        Number = _context.Rooms.Find(x.RoomId).Number,
+                        Capacity = _context.Rooms.Find(x.RoomId).Capacity,
+                        Type = (RoomTypeEnum)_context.Rooms.Find(x.RoomId).Type
+                    }
+                }).ToList(),
+                UpcomingReservations = reservations.Where(x => x.DateOfExemption.AddHours(GlobalVar.DefaultReservationHourStart) >= DateTime.UtcNow).Select(x => new ReservationsViewModel()
+                {
+                    Id = x.Id,
+                    DateOfAccommodation = x.DateOfAccommodation.AddHours(GlobalVar.DefaultReservationHourStart),
+                    DateOfExemption = x.DateOfExemption.AddHours(GlobalVar.DefaultReservationHourStart),
+                    IsBreakfastIncluded = x.IsBreakfastIncluded,
+                    IsAllInclusive = x.IsAllInclusive,
+                    OverallBill = x.OverallBill,
+                    Room = new RoomsViewModel()
+                    {
+                        Number = _context.Rooms.Find(x.RoomId).Number,
+                        Capacity = _context.Rooms.Find(x.RoomId).Capacity,
+                        Type = (RoomTypeEnum)_context.Rooms.Find(x.RoomId).Type
+                    }
+                }).ToList(),
+                TelephoneNumber = client.TelephoneNumber
                 
             };
 
             
 
-            return View();
+            return View(model);
         }
 
 
 
 
         // GET: Clients/Delete/5
-        public async Task<IActionResult> Delete(int id)
+        public IActionResult Delete(int id)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -249,9 +275,9 @@ namespace Web.Controllers
                 return RedirectToAction("LogInRequired", "Users");
             }
 
-            Client client = await _context.Clients.FindAsync(id);
+            Client client =  _context.Clients.Find(id);
             _context.Clients.Remove(client);
-            await _context.SaveChangesAsync();
+             _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }

@@ -13,6 +13,7 @@ namespace Data.Entity
         {
 
         }
+
         [Key, Column(Order = 0)]
         public int ClientId { get; set; }
 

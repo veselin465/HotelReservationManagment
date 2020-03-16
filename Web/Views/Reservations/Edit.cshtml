@@ -15,7 +15,7 @@
 
 <hr />
 
-@if (Model.Message != null)
+@if (Model != null && Model.Message != null)
 {
 
     <h5 style="color:red;">Last action was not completed:</h5>
@@ -68,5 +68,5 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

@@ -35,7 +35,7 @@ namespace Web.Controllers
         }
 
         // GET: Rooms
-        public async Task<IActionResult> Index(RoomsIndexViewModel model)
+        public IActionResult Index(RoomsIndexViewModel model)
         {
 
             UpdateRoomOccupacity();
@@ -49,7 +49,7 @@ namespace Web.Controllers
             model.Pager ??= new PagerViewModel();
             model.Pager.CurrentPage = model.Pager.CurrentPage <= 0 ? 1 : model.Pager.CurrentPage;
 
-            var contextDb = Filter(await _context.Rooms.ToListAsync(), model.Filter);
+            var contextDb = Filter( _context.Rooms.ToList(), model.Filter);
 
             List<RoomsViewModel> items = contextDb.Skip((model.Pager.CurrentPage - 1) * PageSize).Take(PageSize).Select(c => new RoomsViewModel()
             {
@@ -63,7 +63,7 @@ namespace Web.Controllers
             }).ToList();
 
             model.Items = items;
-            model.Pager.PagesCount = (int)Math.Ceiling(await _context.Rooms.CountAsync() / (double)PageSize);
+            model.Pager.PagesCount = Math.Max(1, (int)Math.Ceiling(contextDb.Count() / (double)PageSize));
 
             return View(model);
         }
@@ -71,30 +71,27 @@ namespace Web.Controllers
         // GET: Rooms/Create
         public IActionResult Create()
         {
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 return RedirectToAction("LogInPermissionDenied", "Users");
             }
 
-            RoomsCreateViewModel model = new RoomsCreateViewModel();
-
-            return View(model);
+            return View(new RoomsCreateViewModel());
         }
 
         // POST: Rooms/Create        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(RoomsCreateViewModel createModel)
+        public IActionResult Create(RoomsCreateViewModel createModel)
         {
 
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 return RedirectToAction("LogInPermissionDenied", "Users");
             }
-
+            createModel.Message = null;
             if (ModelState.IsValid)
             {
-
                 if (_context.Rooms.Where(x => x.Number == createModel.Number).Count() > 0)
                 {
                     createModel.Message = $"Room cant be created becuase there's already an existing room with the given number ({createModel.Number})";
@@ -110,20 +107,20 @@ namespace Web.Controllers
                     Capacity = createModel.Capacity
                 };
 
-                _context.Add(room);
-                await _context.SaveChangesAsync();
+                _context.Rooms.Add(room);
+                 _context.SaveChanges();
 
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(createModel);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Rooms/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
 
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 return RedirectToAction("LogInPermissionDenied", "Users");
             }
@@ -133,7 +130,7 @@ namespace Web.Controllers
                 return NotFound();
             }
 
-            Room room = await _context.Rooms.FindAsync(id);
+            Room room =  _context.Rooms.Find(id);
             if (room == null)
             {
                 return NotFound();
@@ -156,10 +153,10 @@ namespace Web.Controllers
         // POST: Rooms/Edit/5       
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(RoomsEditViewModel editModel)
+        public IActionResult Edit(RoomsEditViewModel editModel)
         {
 
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 return RedirectToAction("LogInPermissionDenied", "Users");
             }
@@ -173,14 +170,13 @@ namespace Web.Controllers
                     PriceAdult = editModel.PriceAdult,
                     PriceChild = editModel.PriceChild,
                     Type = (int)editModel.RoomType,
-                    Capacity = editModel.Capacity,
-                    IsFree = editModel.IsFree
+                    Capacity = editModel.Capacity
                 };
 
                 try
                 {
                     _context.Update(room);
-                    await _context.SaveChangesAsync();
+                     _context.SaveChanges();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -203,17 +199,17 @@ namespace Web.Controllers
         }
 
         // GET: Rooms/Delete/5
-        public async Task<IActionResult> Delete(int id)
+        public IActionResult Delete(int id)
         {
 
-            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.admininstration)
+            if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 return RedirectToAction("LogInPermissionDenied", "Users");
             }
 
-            Room room = await _context.Rooms.FindAsync(id);
+            Room room =  _context.Rooms.Find(id);
             _context.Rooms.Remove(room);
-            await _context.SaveChangesAsync();
+             _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }
@@ -227,7 +223,7 @@ namespace Web.Controllers
                 bool isFree = true;
                 foreach (var reservation in reservations)
                 {
-                    if (reservation.DateOfAccommodation.AddHours(12) < DateTime.UtcNow && DateTime.UtcNow < reservation.DateOfExemption.AddHours(12))
+                    if (reservation.DateOfAccommodation.AddHours(GlobalVar.DefaultReservationHourStart) < DateTime.UtcNow && DateTime.UtcNow < reservation.DateOfExemption.AddHours(GlobalVar.DefaultReservationHourStart))
                     {
                         isFree = false;
                         break;
@@ -254,14 +250,15 @@ namespace Web.Controllers
                 {
                     collection = collection.Where(x => x.Capacity == filterModel.Capacity).ToList();
                 }
-                /*if (filterModel.ReservedCount != null)
-                {
-                    collection = collection.Where(x => x.C == filterModel.ReservedCount).ToList();
-                }*/
                 if (filterModel.Type != null)
                 {
                     collection = collection.Where(x => x.Type == (int)filterModel.Type).ToList();
                 }
+                if (filterModel.IsFree != null)
+                {
+                    collection = collection.Where(x => x.IsFree==filterModel.IsFree).ToList();
+                }
+
             }
 
             return collection;
@@ -314,7 +311,7 @@ namespace Web.Controllers
             }
             if (isBreakfastIncluded)
             {
-                bonusPercentage += GlobalVar.InlcludedBreakfastBonusExtraBillPercentage;
+                bonusPercentage += GlobalVar.InlcludedBreakfastExtraBillPercentage;
             }
             return money * (1 + bonusPercentage / 100);
         }

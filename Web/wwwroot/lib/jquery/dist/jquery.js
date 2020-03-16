@@ -566,7 +566,7 @@ var i,
 		return -1;
 	},
 
-	booleans = "checked|selected|async|autofocus|autoplay|controls|defer|disabled|hidden|ismap|loop|multiple|open|readonly|required|scoped",
+	booleans = "checked|selected||autofocus|autoplay|controls|defer|disabled|hidden|ismap|loop|multiple|open|readonly|required|scoped",
 
 	// Regular expressions
 
@@ -3633,7 +3633,7 @@ jQuery.extend( {
 							} else {
 
 								// Call an optional hook to record the stack, in case of exception
-								// since it's otherwise lost when execution goes async
+								// since it's otherwise lost when execution goes 
 								if ( jQuery.Deferred.getStackHook ) {
 									process.stackTrace = jQuery.Deferred.getStackHook();
 								}
@@ -3895,7 +3895,7 @@ function completed() {
 if ( document.readyState === "complete" ||
 	( document.readyState !== "loading" && !document.documentElement.doScroll ) ) {
 
-	// Handle it asynchronously to allow scripts the opportunity to delay ready
+	// Handle it hronously to allow scripts the opportunity to delay ready
 	window.setTimeout( jQuery.ready );
 
 } else {
@@ -8815,7 +8815,7 @@ jQuery.extend( {
 		isLocal: rlocalProtocol.test( location.protocol ),
 		global: true,
 		processData: true,
-		async: true,
+		: true,
 		contentType: "application/x-www-form-urlencoded; charset=UTF-8",
 
 		/*
@@ -9195,7 +9195,7 @@ jQuery.extend( {
 			}
 
 			// Timeout
-			if ( s.async && s.timeout > 0 ) {
+			if ( s.&& s.timeout > 0 ) {
 				timeoutTimer = window.setTimeout( function() {
 					jqXHR.abort( "timeout" );
 				}, s.timeout );
@@ -9371,7 +9371,7 @@ jQuery._evalUrl = function( url ) {
 		type: "GET",
 		dataType: "script",
 		cache: true,
-		async: false,
+		: false,
 		global: false,
 		"throws": true
 	} );
@@ -9488,7 +9488,7 @@ jQuery.ajaxTransport( function( options ) {
 				xhr.open(
 					options.type,
 					options.url,
-					options.async,
+					options.,
 					options.username,
 					options.password
 				);

@@ -10,6 +10,7 @@
 
 <head>
     <style>
+
         table, th, td {
             text-align: center;
             white-space: nowrap;
@@ -21,25 +22,68 @@
             color: black;
             font: bold;
         }
+
+        .common-factor-font {
+            font-family: Consolas;
+        }
     </style>
 </head>
 
-<h1>Detailed information about reservations for</h1>
-<h3>user: @Model.User.FirstName @Model.User.MiddleName @Model.User.LastName (@Model.User.Username)</h3>
-<h3>room: @Model.Room.Number of type @Model.Room.Type (@Model.CurrentReservationClientCount/@Model.Room.Capacity)</h3>
+<h1>Detailed information about reservation:</h1>
+<br />
+<h3>
+    <span class="common-factor-font">USER: </span>
+    @Model.User.FirstName @Model.User.MiddleName @Model.User.LastName (@Model.User.Username)
+</h3>
+<h3>
+    <span class="common-factor-font">ROOM: </span>
+    @Model.Room.Number of type @Model.Room.Type (@Model.CurrentReservationClientCount/@Model.Room.Capacity)
+</h3>
+<h3>
+    <span class="common-factor-font">BILL: </span>
+    @Model.OverallBill
+
+    @if (!Model.IsBreakfastIncluded && !Model.IsAllInclusive)
+    {
+        <span> (no extras included)</span>
+    }
+    else
+    {
+        <span> with included: </span>
+        @if (Model.IsBreakfastIncluded)
+        {<span> +Breakfast </span>}
+        @if (Model.IsAllInclusive)
+        {<span> +All-inclusive </span>}
+    }
+
+
+
+
+</h3>
+
+<div class="row">
+    <div class="col-md-4">
+
+    </div>
+</div>
+
 <br />
 <br />
 
 <div class="row">
     <div class="col-md-4">
 
+        <h3>All linked clients</h3>
+        <br />
         @if (Model == null || Model.SignedInClients == null || Model.SignedInClients.Count() == 0)
         {
-            <h3>no clients</h3>
+            <h3>no clients, yet</h3>
         }
         else
         {
             <div style="max-height:300px;overflow-y:scroll">
+                <br>
+
                 @foreach (var c in Model.SignedInClients)
                 {
                     <h5>@c.FirstName @c.LastName (@c.Email)</h5>
@@ -52,17 +96,31 @@
 
     </div>
 
-    <div class="col-md-4">
-        <form asp-action="LinkClientReservation" asp-controller="Reservations" method="post">
-            <input type="hidden" asp-for="Id" />
-            <label asp-for="ClientId" class="control-label">Add clients</label>
-            @Html.DropDownList("ClientId", Model.AvailableClients, "Select client", new { @class = "form-control" })
-            <span asp-validation-for="ClientId" class="text-danger"></span>
+    @if (Model.Room.Capacity <= Model.SignedInClients.Count())
+    {
+        <div class="col-md-7">
             <br />
-            <div class="form-group">
-                <input type="submit" value="Link to reservation" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
+            <h1 class="text-danger">You cannot add more clients to this reservation.</h1>
+            <br />
+            <h1 class="text-danger">Max room capacity reached.</h1>
+        </div>
+    }
+    else
+    {
+        <div class="col-md-4">
+            <h3>Add clients</h3>
+            <br />
+            <form asp-action="LinkClientReservation" asp-controller="Reservations" method="post">
+                <input type="hidden" asp-for="Id" />
+                @Html.DropDownList("ClientId", Model.AvailableClients, "Select client", new { @class = "form-control" })
+                <span asp-validation-for="ClientId" class="text-danger"></span>
+                <br />
+                <div class="form-group">
+                    <input type="submit" value="Link to reservation" class="btn btn-primary" />
+                </div>
+            </form>
+        </div>
+    }
 
 </div>
+

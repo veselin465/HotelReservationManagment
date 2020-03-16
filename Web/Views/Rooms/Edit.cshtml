@@ -6,9 +6,8 @@
 }
 
 <h1>Edit room @Model.Number</h1>
-
-<h4>Car</h4>
 <hr />
+
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Edit" asp-controller="Rooms" method="post">
@@ -27,7 +26,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="IsFree" class="control-label"></label>
-                <input asp-for="IsFree" class="form-control" />
+                <input asp-for="IsFree" class="form-control" disabled/>
                 <span asp-validation-for="IsFree" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -59,5 +58,5 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ Html.RenderPartial("_ValidationScriptsPartial");}
 }

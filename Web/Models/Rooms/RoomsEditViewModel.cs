@@ -19,7 +19,6 @@ namespace Web.Models.Rooms
         [Required]
         public int Capacity { get; set; }
 
-        [Required]
         public bool IsFree { get; set; }
 
         [Required]

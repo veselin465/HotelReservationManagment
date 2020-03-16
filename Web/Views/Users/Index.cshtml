@@ -23,27 +23,32 @@
 
 <h1>Complete information about users</h1>
 <br />
-<h2><a onclick="showHideFilter()" href="#">Filter</a></h2>
-<form asp-action="Index" asp-controller="Users" method="post" id="filterForm" hidden>
+<form asp-action="Index" asp-controller="Users" method="post" id="filterForm">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="row">
         <div class="col-md-2 form-group">
-            <input asp-for="Filter.Username" class="form-control" placeholder="First name" />
-            <span asp-validation-for="Filter.Username" class="text-danger"></span>
+            <h3><b>FILTER BY</b></h3>
         </div>
-        <div class="col-md-2 form-group">
+        <div class="col-md-3 form-group">
             <input asp-for="Filter.FirstName" class="form-control" placeholder="First name" />
             <span asp-validation-for="Filter.FirstName" class="text-danger"></span>
         </div>
-        <div class="col-md-2 form-group">
+        <div class="col-md-3 form-group">
             <input asp-for="Filter.MiddleName" class="form-control" placeholder="Middle name" />
             <span asp-validation-for="Filter.MiddleName" class="text-danger"></span>
         </div>
-        <div class="col-md-2 form-group">
+        <div class="col-md-3 form-group">
             <input asp-for="Filter.LastName" class="form-control" placeholder="Last name" />
             <span asp-validation-for="Filter.LastName" class="text-danger"></span>
         </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2 form-group"></div>
         <div class="col-md-3 form-group">
+            <input asp-for="Filter.Username" class="form-control" placeholder="Username" />
+            <span asp-validation-for="Filter.Username" class="text-danger"></span>
+        </div>
+        <div class="col-md-5 form-group">
             <input asp-for="Filter.Email" class="form-control" placeholder="Email" />
             <span asp-validation-for="Filter.Email" class="text-danger"></span>
         </div>
@@ -166,10 +171,3 @@
     </tr>
 
 </table>
-
-<script>
-    function showHideFilter() {
-        var d = document.getElementById("filterForm");
-        d.hidden = !d.hidden;
-    }
-</script>
