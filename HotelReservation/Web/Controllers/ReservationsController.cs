@@ -14,6 +14,7 @@ using Web.Models.Clients;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Data.Enumeration;
 using System.Diagnostics;
+using Web.Models.Validation;
 
 namespace Web.Controllers
 {
@@ -51,7 +52,7 @@ namespace Web.Controllers
             model.Pager ??= new PagerViewModel();
             model.Pager.CurrentPage = model.Pager.CurrentPage <= 0 ? 1 : model.Pager.CurrentPage;
 
-            List<Reservation> reservations =  _context.Reservations.Skip((model.Pager.CurrentPage - 1) * PageSize).Take(PageSize).ToList();
+            List<Reservation> reservations = _context.Reservations.Skip((model.Pager.CurrentPage - 1) * PageSize).Take(PageSize).ToList();
 
             List<ReservationsViewModel> list = new List<ReservationsViewModel>();
 
@@ -95,7 +96,7 @@ namespace Web.Controllers
             }
 
             model.Items = list;
-            model.Pager.PagesCount = Math.Max(1, (int)Math.Ceiling( _context.Reservations.Count() / (double)PageSize));
+            model.Pager.PagesCount = Math.Max(1, (int)Math.Ceiling(_context.Reservations.Count() / (double)PageSize));
 
             return View(model);
         }
@@ -129,29 +130,20 @@ namespace Web.Controllers
             if (ModelState.IsValid)
             {
 
-                int daysDiff = CalculateDaysPassed(createModel.DateOfAccommodation, createModel.DateOfExemption);
-
-                if (daysDiff <= 0)
+                try
                 {
-                    createModel = CreateReservationVMWithDropdown(createModel, "Date of accommodation must be before Date of exemption");
-                    return View(createModel);
-                }
-
-                
-
-                int userId = createModel.UserId;
-                int roomId = createModel.RoomId;
-
-                foreach (var item in _context.Reservations.Where(x => x.RoomId == roomId))
-                {
-                    if ((item.DateOfAccommodation >= createModel.DateOfAccommodation && item.DateOfAccommodation < createModel.DateOfExemption)
-                        ||
-                        (item.DateOfExemption > createModel.DateOfAccommodation && item.DateOfExemption <= createModel.DateOfExemption))
+                    Validate(new Validation_Reservation()
                     {
-                        createModel = CreateReservationVMWithDropdown(createModel, $"Room is already reserved for the chosen period. Either choose a period before {item.DateOfAccommodation}, or after {item.DateOfExemption}");
-
-                        return View(createModel);
-                    }
+                        DateOfAccommodation = createModel.DateOfAccommodation,
+                        DateOfExemption = createModel.DateOfExemption,
+                        RoomId = createModel.RoomId,
+                        ReservationId = -1
+                    });
+                }
+                catch (InvalidOperationException e)
+                {
+                    createModel = CreateReservationVMWithDropdown(createModel, e.Message);
+                    return View(createModel);
                 }
 
                 Reservation reservation = new Reservation
@@ -166,15 +158,13 @@ namespace Web.Controllers
                 };
 
                 _context.Reservations.Add(reservation);
-                 _context.SaveChanges();
+                _context.SaveChanges();
 
                 return RedirectToAction(nameof(Index));
             }
-
-            return RedirectToAction(nameof(Index));
+            createModel = CreateReservationVMWithDropdown(createModel, null);
+            return View(createModel);
         }
-
-
 
         public IActionResult Edit(int? id)
         {
@@ -184,17 +174,12 @@ namespace Web.Controllers
                 return RedirectToAction("LogInRequired", "Users");
             }
 
-            if (id == null)
+            if (id == null || !ReservationExists((int)id))
             {
                 return NotFound();
             }
 
-            Reservation reservation =  _context.Reservations.Find(id);
-            if (reservation == null)
-            {
-
-                return NotFound();
-            }
+            Reservation reservation = _context.Reservations.Find(id);
 
             ReservationsEditViewModel model = new ReservationsEditViewModel()
             {
@@ -220,57 +205,47 @@ namespace Web.Controllers
                 return RedirectToAction("LogInRequired", "Users");
             }
 
-            int daysDiff = CalculateDaysPassed(editModel.DateOfAccommodation, editModel.DateOfExemption);
-
-            if (daysDiff <= 0)
+            if (!ReservationExists(editModel.Id))
             {
-                editModel.Message = "Date of accommodation must be before Date of exemption";
-                return View(editModel);
+                return NotFound();
             }
 
-            int roomId = editModel.Id;
 
-            foreach (var item in _context.Reservations.Where(x => x.RoomId == roomId))
-            {
-                if ((item.DateOfAccommodation > editModel.DateOfAccommodation && item.DateOfAccommodation < editModel.DateOfExemption)
-                    ||
-                    (item.DateOfExemption > editModel.DateOfAccommodation && item.DateOfExemption < editModel.DateOfExemption))
-                {
-                    editModel.Message =$"Room is already reserved for the chosen period. Either choose a period before {item.DateOfAccommodation}, or after {item.DateOfExemption}";
-
-                    return View(editModel);
-                }
-            }
 
             if (ModelState.IsValid)
             {
+
+                try
+                {
+                    Validate(new Validation_Reservation()
+                    {
+                        DateOfAccommodation = editModel.DateOfAccommodation,
+                        DateOfExemption = editModel.DateOfExemption,
+                        RoomId = _context.Reservations.Find(editModel.Id).RoomId,
+                        ReservationId = editModel.Id
+                    });
+                }
+                catch (InvalidOperationException e)
+                {
+                    editModel.Message = e.Message;
+                    return View(editModel);
+                }
+
+
                 Reservation reservation = _context.Reservations.Find(editModel.Id);
 
                 reservation.DateOfAccommodation = editModel.DateOfAccommodation;
                 reservation.DateOfExemption = editModel.DateOfExemption;
                 reservation.IsAllInclusive = editModel.IsAllInclusive;
                 reservation.IsBreakfastIncluded = editModel.IsBreakfastIncluded;
-               
-                try
-                {
-                    _context.Reservations.Update(reservation);
-                     _context.SaveChanges();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ReservationExists(reservation.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+
+                _context.Reservations.Update(reservation);
+                _context.SaveChanges();
+
 
                 reservation.OverallBill = CalculateOverAllPrice(reservation.Id);
                 _context.Reservations.Update(reservation);
-                 _context.SaveChanges();
+                _context.SaveChanges();
 
 
                 return RedirectToAction(nameof(Index));
@@ -280,12 +255,17 @@ namespace Web.Controllers
         }
 
 
-        public IActionResult Delete(int id)
+        public IActionResult Delete(int? id)
         {
 
             if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
             {
                 return RedirectToAction("LogInPermissionDenied", "Users");
+            }
+
+            if (id == null || !ReservationExists((int)id))
+            {
+                return NotFound();
             }
 
             Reservation reservation = _context.Reservations.Find(id);
@@ -309,7 +289,7 @@ namespace Web.Controllers
                 return NotFound();
             }
 
-            Reservation reservation =  _context.Reservations.Find(id);
+            Reservation reservation = _context.Reservations.Find(id);
 
             UsersViewModel userVM = new UsersViewModel()
             {
@@ -330,9 +310,9 @@ namespace Web.Controllers
                 Type = (RoomTypeEnum)reservation.Room.Type
             };
 
-            var allClients =  _context.Clients.ToList();
+            var allClients = _context.Clients.ToList();
 
-            var allClientReservations =  _context.ClientReservation.Where(x => x.ReservationId == id).ToList();
+            var allClientReservations = _context.ClientReservation.Where(x => x.ReservationId == id).ToList();
 
             var reservedClients = new List<Client>();
 
@@ -341,7 +321,7 @@ namespace Web.Controllers
             foreach (var clientReservation in allClientReservations)
             {
                 availableClients.RemoveAll(x => x.Id == clientReservation.ClientId);
-                var client = ( _context.Clients.Find(clientReservation.ClientId));
+                var client = (_context.Clients.Find(clientReservation.ClientId));
                 reservedClients.Add(client);
             }
 
@@ -406,9 +386,9 @@ namespace Web.Controllers
                 ReservationId = reservationId
             };
 
-            var currentRoomOccupyCount = ( _context.ClientReservation.Where(x => x.ReservationId == reservationId).ToList()).Count;
+            var currentRoomOccupyCount = (_context.ClientReservation.Where(x => x.ReservationId == reservationId).ToList()).Count;
 
-            Room room =  _context.Rooms.Find(_context.Reservations.Find(reservationId).RoomId);
+            Room room = _context.Rooms.Find(_context.Reservations.Find(reservationId).RoomId);
 
 
             if (currentRoomOccupyCount >= room.Capacity)
@@ -425,26 +405,26 @@ namespace Web.Controllers
             else
             {
                 _context.ClientReservation.Add(clientReservation);
-                 _context.SaveChanges();
+                _context.SaveChanges();
 
-                bool isClientAdult = ( _context.Clients.Find(clientId)).IsAdult;
+                bool isClientAdult = (_context.Clients.Find(clientId)).IsAdult;
                 decimal pricePerDay = 0;
                 if (isClientAdult)
                 {
-                    pricePerDay += ( _context.Rooms.Find(room.Id)).PriceAdult;
+                    pricePerDay += (_context.Rooms.Find(room.Id)).PriceAdult;
                 }
                 else
                 {
-                    pricePerDay += ( _context.Rooms.Find(room.Id)).PriceChild;
+                    pricePerDay += (_context.Rooms.Find(room.Id)).PriceChild;
                 }
 
-                Reservation reservation =  _context.Reservations.Find(reservationId);
-                decimal clientOverall = pricePerDay*CalculateDaysPassed(reservation.DateOfAccommodation, reservation.DateOfExemption);
+                Reservation reservation = _context.Reservations.Find(reservationId);
+                decimal clientOverall = pricePerDay * CalculateDaysPassed(reservation.DateOfAccommodation, reservation.DateOfExemption);
                 clientOverall = AddExtras(clientOverall, reservation.IsAllInclusive, reservation.IsBreakfastIncluded);
                 reservation.OverallBill += clientOverall;
 
                 _context.Reservations.Update(reservation);
-                 _context.SaveChanges();
+                _context.SaveChanges();
             }
             return RedirectToAction("Detail", new { id = reservationId });
         }
@@ -452,6 +432,31 @@ namespace Web.Controllers
         private bool ReservationExists(int id)
         {
             return _context.Reservations.Any(e => e.Id == id);
+        }
+
+        private void Validate(Validation_Reservation model)
+        {
+
+            if (CalculateDaysPassed(model.DateOfAccommodation, model.DateOfExemption) <= 0)
+            {
+                throw new InvalidOperationException("Date of accommodation must be before Date of exemption");
+            }
+
+            if (model.DateOfAccommodation.AddHours(GlobalVar.DefaultReservationHourStart) <= DateTime.UtcNow)
+            {
+                throw new InvalidOperationException("Date of accommodation must be after current date");
+            }
+
+            foreach (var item in _context.Reservations.Where(x => x.RoomId == model.RoomId && x.Id!=model.ReservationId))
+            {
+                if ((item.DateOfAccommodation >= model.DateOfAccommodation && item.DateOfAccommodation < model.DateOfExemption)
+                    ||
+                    (item.DateOfExemption > model.DateOfAccommodation && item.DateOfExemption <= model.DateOfExemption))
+                {
+                    throw new InvalidOperationException($"Room is already reserved for the chosen period. Either choose a period before {item.DateOfAccommodation}, or after {item.DateOfExemption}");
+                }
+            }
+
         }
 
         private int CalculateDaysPassed(DateTime startDate, DateTime endDate)
@@ -521,6 +526,8 @@ namespace Web.Controllers
             var overallBillWithoutextras = CalculateOverallBillWithoutExtrasForRoom(reservationId, days);
             return AddExtras(overallBillWithoutextras, reservation.IsAllInclusive, reservation.IsBreakfastIncluded);
         }
+
+
 
         private ReservationsCreateViewModel CreateReservationVMWithDropdown(ReservationsCreateViewModel model, string message)
         {

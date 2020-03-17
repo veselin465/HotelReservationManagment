@@ -8,6 +8,15 @@
 <h1>Edit room @Model.Number</h1>
 <hr />
 
+
+@if (Model != null && Model.Message != null)
+{
+
+    <h5 style="color:red;">Last action was not completed:</h5>
+    <h5 style="color:red;">@Model.Message</h5>
+    <hr />
+}
+
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Edit" asp-controller="Rooms" method="post">
@@ -26,7 +35,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="IsFree" class="control-label"></label>
-                <input asp-for="IsFree" class="form-control" disabled/>
+                <input asp-for="IsFree" class="form-control" disabled />
                 <span asp-validation-for="IsFree" class="text-danger"></span>
             </div>
             <div class="form-group">

@@ -32,5 +32,7 @@ namespace Web.Models.Rooms
         [Required]
         public RoomTypeEnum RoomType { get; set; }
 
+        public string Message { get; set; }
+
     }
 }

@@ -71,6 +71,7 @@ else
             <br />
             @if (Model == null || Model.PastReservations == null || Model.PastReservations.Count() == 0)
             {
+                <br />
                 <h2>no past reservations, yet</h2>
             }
             else
@@ -103,8 +104,9 @@ else
 
             <h3>Upcoming reservations</h3>
             <br />
-            @if (Model == null || Model.PastReservations == null || Model.PastReservations.Count() == 0)
+            @if (Model == null || Model.UpcomingReservations == null || Model.UpcomingReservations.Count() == 0)
             {
+                <br />
                 <h2>no upcoming reservations, yet</h2>
             }
             else

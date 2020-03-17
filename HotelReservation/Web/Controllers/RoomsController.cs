@@ -11,6 +11,7 @@ using Web.Models.Shared;
 using Web.Models.Users;
 using Web.Models.Reservations;
 using Data.Enumeration;
+using Web.Models.Validation;
 
 namespace Web.Controllers
 {
@@ -49,7 +50,7 @@ namespace Web.Controllers
             model.Pager ??= new PagerViewModel();
             model.Pager.CurrentPage = model.Pager.CurrentPage <= 0 ? 1 : model.Pager.CurrentPage;
 
-            var contextDb = Filter( _context.Rooms.ToList(), model.Filter);
+            var contextDb = Filter(_context.Rooms.ToList(), model.Filter);
 
             List<RoomsViewModel> items = contextDb.Skip((model.Pager.CurrentPage - 1) * PageSize).Take(PageSize).Select(c => new RoomsViewModel()
             {
@@ -92,6 +93,23 @@ namespace Web.Controllers
             createModel.Message = null;
             if (ModelState.IsValid)
             {
+
+                try
+                {
+                    Validate(new Validation_Room()
+                    {
+                        Capacity = createModel.Capacity,
+                        Number = createModel.Number
+                    });
+                }
+                catch (InvalidOperationException e)
+                {
+                    createModel.Message = e.Message;
+                    return View(createModel);
+                }
+
+
+
                 if (_context.Rooms.Where(x => x.Number == createModel.Number).Count() > 0)
                 {
                     createModel.Message = $"Room cant be created becuase there's already an existing room with the given number ({createModel.Number})";
@@ -108,14 +126,14 @@ namespace Web.Controllers
                 };
 
                 _context.Rooms.Add(room);
-                 _context.SaveChanges();
+                _context.SaveChanges();
 
                 return RedirectToAction(nameof(Index));
             }
 
             return RedirectToAction(nameof(Index));
         }
-
+      
         // GET: Rooms/Edit/5
         public IActionResult Edit(int? id)
         {
@@ -125,16 +143,12 @@ namespace Web.Controllers
                 return RedirectToAction("LogInPermissionDenied", "Users");
             }
 
-            if (id == null)
+            if (id == null || !RoomExists((int)id))
             {
                 return NotFound();
             }
 
-            Room room =  _context.Rooms.Find(id);
-            if (room == null)
-            {
-                return NotFound();
-            }
+            Room room = _context.Rooms.Find(id);
 
             RoomsEditViewModel model = new RoomsEditViewModel
             {
@@ -163,6 +177,26 @@ namespace Web.Controllers
 
             if (ModelState.IsValid)
             {
+
+                if (!RoomExists(editModel.Id))
+                {
+                    return NotFound();
+                }
+
+                try
+                {
+                    Validate(new Validation_Room()
+                    {
+                        Capacity = editModel.Capacity,
+                        Number = editModel.Number
+                    });
+                }
+                catch (InvalidOperationException e)
+                {
+                    editModel.Message = e.Message;
+                    return View(editModel);
+                }
+
                 Room room = new Room()
                 {
                     Id = editModel.Id,
@@ -173,22 +207,8 @@ namespace Web.Controllers
                     Capacity = editModel.Capacity
                 };
 
-                try
-                {
-                    _context.Update(room);
-                     _context.SaveChanges();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!RoomExists(room.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(room);
+                _context.SaveChanges();
 
                 UpdateAllReservationsOverallPriceRelatedToRoom(room.Id);
 
@@ -199,7 +219,7 @@ namespace Web.Controllers
         }
 
         // GET: Rooms/Delete/5
-        public IActionResult Delete(int id)
+        public IActionResult Delete(int? id)
         {
 
             if (GlobalVar.LoggedOnUserRights != GlobalVar.UserRights.Admininstrator)
@@ -207,9 +227,14 @@ namespace Web.Controllers
                 return RedirectToAction("LogInPermissionDenied", "Users");
             }
 
-            Room room =  _context.Rooms.Find(id);
+            if (id == null || !RoomExists((int)id))
+            {
+                return NotFound();
+            }
+
+            Room room = _context.Rooms.Find(id);
             _context.Rooms.Remove(room);
-             _context.SaveChanges();
+            _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }
@@ -241,6 +266,21 @@ namespace Web.Controllers
             return _context.Rooms.Any(e => e.Id == id);
         }
 
+        private void Validate(Validation_Room model)
+        {
+
+            if (model.Number<=0)
+            {
+                throw new InvalidOperationException("Room number must be positive integer");
+            }
+
+            if (model.Capacity <= 0)
+            {
+                throw new InvalidOperationException("Room capacity must be positive integer");
+            }
+
+        }
+
         private List<Room> Filter(List<Room> collection, RoomsFilterViewModel filterModel)
         {
 
@@ -256,7 +296,7 @@ namespace Web.Controllers
                 }
                 if (filterModel.IsFree != null)
                 {
-                    collection = collection.Where(x => x.IsFree==filterModel.IsFree).ToList();
+                    collection = collection.Where(x => x.IsFree == filterModel.IsFree).ToList();
                 }
 
             }
@@ -285,8 +325,6 @@ namespace Web.Controllers
             }
 
         }
-
-
 
         private int CalculateDaysPassed(DateTime startDate, DateTime endDate)
         {

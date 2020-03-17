@@ -100,26 +100,34 @@
     {
         <div class="col-md-7">
             <br />
-            <h1 class="text-danger">You cannot add more clients to this reservation.</h1>
+            <h1 class="text-danger">You can no longer add clients to this reservation.</h1>
             <br />
             <h1 class="text-danger">Max room capacity reached.</h1>
         </div>
     }
-    else
+    else if (Model.AvailableClients.Count() <= 0)
     {
-        <div class="col-md-4">
-            <h3>Add clients</h3>
+        <div class="col-md-7">
             <br />
-            <form asp-action="LinkClientReservation" asp-controller="Reservations" method="post">
-                <input type="hidden" asp-for="Id" />
-                @Html.DropDownList("ClientId", Model.AvailableClients, "Select client", new { @class = "form-control" })
-                <span asp-validation-for="ClientId" class="text-danger"></span>
-                <br />
-                <div class="form-group">
-                    <input type="submit" value="Link to reservation" class="btn btn-primary" />
-                </div>
-            </form>
+            <h1 class="text-danger">You can no longer add clients to this reservation.</h1>
+            <br />
+            <h1 class="text-danger">No available clients.</h1>
         </div>
+    }else
+    {
+    <div class="col-md-4">
+        <h3>Add clients</h3>
+        <br />
+        <form asp-action="LinkClientReservation" asp-controller="Reservations" method="post">
+            <input type="hidden" asp-for="Id" />
+            @Html.DropDownList("ClientId", Model.AvailableClients, "Select client", new { @class = "form-control" })
+            <span asp-validation-for="ClientId" class="text-danger"></span>
+            <br />
+            <div class="form-group">
+                <input type="submit" value="Link to reservation" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
     }
 
 </div>

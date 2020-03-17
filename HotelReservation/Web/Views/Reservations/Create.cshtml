@@ -30,19 +30,39 @@
 
             <br />
 
-            <div class="form-group">
-                <label asp-for="RoomId" class="control-label">Room number</label>
-                @Html.DropDownList("RoomId", Model.Rooms, "Select room number", new { @class = "form-control" })
-                <span asp-validation-for="RoomId" class="text-danger"></span>
-            </div>
+            @if (Model.Rooms is IEnumerable<SelectListItem>)
+            {
+
+                <div class="form-group">
+                    <label asp-for="RoomId" class="control-label">Room number</label>
+                    @Html.DropDownList("RoomId", Model.Rooms, "Select room number", new { @class = "form-control" })
+                    <span asp-validation-for="RoomId" class="text-danger"></span>
+                </div>
+            }
+            else
+            {
+                <div class="form-group">
+                    Room collection was not found
+                </div>
+            }
 
             <br />
 
-            <div class="form-group">
-                <label asp-for="UserId" class="control-label">Reservation is in the name of</label>
-                @Html.DropDownList("UserId", Model.Users, "Select user", new { @class = "form-control" })
-                <span asp-validation-for="UserId" class="text-danger"></span>
-            </div>
+            @if (Model.Users is IEnumerable<SelectListItem>)
+            {
+
+                <div class="form-group">
+                    <label asp-for="UserId" class="control-label">Reservation is in the name of</label>
+                    @Html.DropDownList("UserId", Model.Users, "Select user", new { @class = "form-control" })
+                    <span asp-validation-for="UserId" class="text-danger"></span>
+                </div>
+            }
+            else
+            {
+                <div class="form-group">
+                    User collection was not found
+                </div>
+            }
 
             <br />
             <div class="form-group">

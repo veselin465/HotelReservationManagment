@@ -24,7 +24,7 @@ namespace Web.Controllers
             _context = new HotelReservationDb();
         }
 
-        
+
         public IActionResult ChangePageSize(int id)
         {
             if (id > 0)
@@ -48,7 +48,7 @@ namespace Web.Controllers
             model.Pager ??= new PagerViewModel();
             model.Pager.CurrentPage = model.Pager.CurrentPage <= 0 ? 1 : model.Pager.CurrentPage;
 
-            var contextDb = Filter( _context.Clients.ToList(), model.Filter);
+            var contextDb = Filter(_context.Clients.ToList(), model.Filter);
 
             List<ClientsViewModel> items = contextDb.Skip((model.Pager.CurrentPage - 1) * PageSize).Take(PageSize).Select(c => new ClientsViewModel()
             {
@@ -123,17 +123,12 @@ namespace Web.Controllers
                 return RedirectToAction("LogInRequired", "Users");
             }
 
-            if (id == null)
+            if (id == null || !ClientExists((int)id))
             {
                 return NotFound();
             }
 
-            Client client =  _context.Clients.Find(id);
-            if (client == null)
-            {
-
-                return NotFound();
-            }
+            Client client = _context.Clients.Find(id);
 
             ClientsEditViewModel model = new ClientsEditViewModel
             {
@@ -161,6 +156,12 @@ namespace Web.Controllers
 
             if (ModelState.IsValid)
             {
+
+                if (!ClientExists(editModel.Id))
+                {
+                    return NotFound();
+                }
+
                 Client client = new Client()
                 {
                     Id = editModel.Id,
@@ -171,22 +172,9 @@ namespace Web.Controllers
                     IsAdult = editModel.IsAdult
                 };
 
-                try
-                {
-                    _context.Update(client);
-                     _context.SaveChanges();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ClientExists(client.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(client);
+                _context.SaveChanges();
+
 
                 return RedirectToAction(nameof(Index));
             }
@@ -204,18 +192,19 @@ namespace Web.Controllers
                 return RedirectToAction("LogInRequired", "Users");
             }
 
-            if (id == null||!ClientExists((int)id))
+            if (id == null || !ClientExists((int)id))
             {
                 return NotFound();
             }
 
-            Client client =  _context.Clients.Find(id);
-            List<Reservation> reservations =  _context.Reservations.ToList();
-            List<ClientReservation> clientReservations =  _context.ClientReservation.Where(x => x.ClientId == id).ToList();
+            Client client = _context.Clients.Find(id);
+            List<Reservation> reservations = new List<Reservation>();
+            List<ClientReservation> clientReservations = _context.ClientReservation.Where(x => x.ClientId == id).ToList();
 
             foreach (var cr in clientReservations)
             {
-                reservations.RemoveAll(x => x.Id == cr.ReservationId);
+
+                reservations.Add(_context.Reservations.Find(cr.ReservationId));
             }
 
             ClientsDetailViewModel model = new ClientsDetailViewModel()
@@ -224,7 +213,7 @@ namespace Web.Controllers
                 LastName = client.LastName,
                 Email = client.Email,
                 IsAdult = client.IsAdult,
-                PastReservations = reservations.Where(x => x.DateOfExemption.AddHours(GlobalVar.DefaultReservationHourStart) < DateTime.UtcNow).Select(x=>new ReservationsViewModel()
+                PastReservations = reservations.Where(x => x.DateOfExemption.AddHours(GlobalVar.DefaultReservationHourStart) < DateTime.UtcNow).Select(x => new ReservationsViewModel()
                 {
                     Id = x.Id,
                     DateOfAccommodation = x.DateOfAccommodation.AddHours(GlobalVar.DefaultReservationHourStart),
@@ -255,19 +244,15 @@ namespace Web.Controllers
                     }
                 }).ToList(),
                 TelephoneNumber = client.TelephoneNumber
-                
-            };
 
-            
+            };
 
             return View(model);
         }
 
 
-
-
         // GET: Clients/Delete/5
-        public IActionResult Delete(int id)
+        public IActionResult Delete(int? id)
         {
 
             if (GlobalVar.LoggedOnUserId == -1)
@@ -275,9 +260,15 @@ namespace Web.Controllers
                 return RedirectToAction("LogInRequired", "Users");
             }
 
-            Client client =  _context.Clients.Find(id);
+
+            if (id == null || !ClientExists((int)id))
+            {
+                return NotFound();
+            }
+
+            Client client = _context.Clients.Find(id);
             _context.Clients.Remove(client);
-             _context.SaveChanges();
+            _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }
@@ -303,7 +294,7 @@ namespace Web.Controllers
             return collection;
         }
 
-       
+
 
     }
 }
